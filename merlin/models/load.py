@@ -33,7 +33,7 @@ class Merlin(nn.Module):
         RadiologyReport: bool = False,
         FiveYearPred: bool = False,
     ):
-        super(Merlin, self).__init__()
+        super().__init__()
 
         # If both are True, raise an error
         if sum([ImageEmbedding, PhenotypeCls, FiveYearPred]) > 1:
