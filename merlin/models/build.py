@@ -17,9 +17,13 @@ class ImageEncoder(nn.Module):
         FiveYearPred: bool = False,
     ):
         super().__init__()
+
+        # Store the flags for the different modes of the image encoder
         self.ImageEmbedding = ImageEmbedding
         self.PhenotypeCls = PhenotypeCls
         self.FiveYearPred = FiveYearPred
+
+        # Initialize the ResNet model and inflate it to create the I3ResNet
         resnet = torchvision.models.resnet152(pretrained=True)
         self.i3_resnet = i3res.I3ResNet(
             copy.deepcopy(resnet),

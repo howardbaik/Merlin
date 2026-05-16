@@ -8,18 +8,22 @@ from merlin.models.radiology_report_generation import Clip3DForTextGeneration
 from merlin.utils import download_file
 from typing import Dict, Any
 
+# Repo for Hugging Face
 REPO_ID = "stanfordmimi/Merlin"
+
+# Define the model configurations for each task
+# Dict is a type hint indicating that MODEL_CONFIGS is a dictionary where keys are strings and values are dictionaries with string keys and any type of values.
 MODEL_CONFIGS: Dict[str, Dict[str, Any]] = {
     "default": {
-        "builder": MerlinArchitecture,
+        "builder": MerlinArchitecture, # Class that builds the model architecture for the default task
         "checkpoint": "i3_resnet_clinical_longformer_best_clip_04-02-2024_23-21-36_epoch_99.pt",
     },
     "report_generation": {
-        "builder": Clip3DForTextGeneration,
+        "builder": Clip3DForTextGeneration, # Class that builds the model architecture for the radiology report generation task
         "checkpoint": "resnet_gpt2_best_stanford_report_generation_average.pt",
     },
     "five_year_disease_prediction": {
-        "builder": MerlinArchitecture,
+        "builder": MerlinArchitecture, # Class that builds the model architecture for the five year disease prediction task (same as default, but with different checkpoint)
         "checkpoint": "resnet_clinical_longformer_five_year_disease_prediction.pt",
     },
 }
@@ -40,13 +44,14 @@ class Merlin(nn.Module):
             raise ValueError(
                 "ImageEmbedding and PhenotypeCls and FiveYearPred cannot be True at the same time."
             )
-
+        # Define the task (report generation, five year disease prediction, default)
         self.task = (
             "report_generation"
             if RadiologyReport
             else ("five_year_disease_prediction" if FiveYearPred else "default")
         )
 
+        # Load the appropriate model configuration based on the task
         self._config = MODEL_CONFIGS[self.task]
 
         # Pass through the flags needed by the underlying model builders
@@ -72,11 +77,11 @@ class Merlin(nn.Module):
         local_dir = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "checkpoints"
         )
-        checkpoint_path = os.path.join(local_dir, checkpoint_name)
         self._download_checkpoint(filename=checkpoint_name, local_dir=local_dir)
 
         # Build the model
         model = model_builder(**kwargs)
+        checkpoint_path = os.path.join(local_dir, checkpoint_name)
 
         print(f"Loading checkpoint for '{self.task}' task from {checkpoint_path}")
         state_dict = torch.load(checkpoint_path, map_location="cpu")
