@@ -41,7 +41,7 @@ model = Merlin()
 model.eval()
 model.cuda()
 
-data_dir = os.path.join(os.path.dirname(__file__), "abct_data")
+data_dir = os.path.join(os.getcwd(), "abct_data")
 cache_dir = data_dir.replace("abct_data", "abct_data_cache")
 
 organ_system_variations = {
@@ -81,7 +81,7 @@ dataloader = DataLoader(
 
 model = Merlin(RadiologyReport=True)
 model.eval()
-model.cuda()
+_ = model.cuda()
 
 generations_dict = defaultdict(list)
 
