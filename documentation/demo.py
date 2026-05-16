@@ -23,7 +23,7 @@ model = Merlin()
 model.eval()
 model.cuda()
 
-data_dir = os.path.join(os.path.dirname(__file__), "abct_data")
+data_dir = os.path.join(os.getcwd(), "abct_data")
 cache_dir = data_dir.replace("abct_data", "abct_data_cache")
 
 datalist = [
@@ -76,7 +76,7 @@ model = Merlin(PhenotypeCls=True)
 model.eval()
 model.cuda()
 
-phenotypes = pd.read_csv(os.path.join(os.path.dirname(__file__), "phenotypes.csv"))
+phenotypes = pd.read_csv(os.path.join(os.getcwd(), "documentation", "phenotypes.csv"))
 
 for batch in dataloader:
     outputs = model(
