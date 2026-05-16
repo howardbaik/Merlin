@@ -1,4 +1,5 @@
 import os
+from typing import Dict, Any
 
 import torch
 from torch import nn
@@ -6,24 +7,23 @@ from torch import nn
 from merlin.models.build import MerlinArchitecture
 from merlin.models.radiology_report_generation import Clip3DForTextGeneration
 from merlin.utils import download_file
-from typing import Dict, Any
 
-# Repo for Hugging Face
+
 REPO_ID = "stanfordmimi/Merlin"
 
-# Define the model configurations for each task
-# Dict is a type hint indicating that MODEL_CONFIGS is a dictionary where keys are strings and values are dictionaries with string keys and any type of values.
+# Model configurations for each supported task.
+# Each entry maps a task name to its model builder class and checkpoint filename.
 MODEL_CONFIGS: Dict[str, Dict[str, Any]] = {
     "default": {
-        "builder": MerlinArchitecture, # Class that builds the model architecture for the default task
+        "builder": MerlinArchitecture,
         "checkpoint": "i3_resnet_clinical_longformer_best_clip_04-02-2024_23-21-36_epoch_99.pt",
     },
     "report_generation": {
-        "builder": Clip3DForTextGeneration, # Class that builds the model architecture for the radiology report generation task
+        "builder": Clip3DForTextGeneration,
         "checkpoint": "resnet_gpt2_best_stanford_report_generation_average.pt",
     },
     "five_year_disease_prediction": {
-        "builder": MerlinArchitecture, # Class that builds the model architecture for the five year disease prediction task (same as default, but with different checkpoint)
+        "builder": MerlinArchitecture,
         "checkpoint": "resnet_clinical_longformer_five_year_disease_prediction.pt",
     },
 }
@@ -39,47 +39,39 @@ class Merlin(nn.Module):
     ):
         super().__init__()
 
-        # If both are True, raise an error
         if sum([ImageEmbedding, PhenotypeCls, FiveYearPred]) > 1:
             raise ValueError(
-                "ImageEmbedding and PhenotypeCls and FiveYearPred cannot be True at the same time."
+                "ImageEmbedding, PhenotypeCls, and FiveYearPred cannot be True at the same time."
             )
-        # Define the task (report generation, five year disease prediction, default)
-        self.task = (
-            "report_generation"
-            if RadiologyReport
-            else ("five_year_disease_prediction" if FiveYearPred else "default")
-        )
 
-        # Load the appropriate model configuration based on the task
+        if RadiologyReport:
+            self.task = "report_generation"
+        elif FiveYearPred:
+            self.task = "five_year_disease_prediction"
+        else:
+            self.task = "default"
+
         self._config = MODEL_CONFIGS[self.task]
 
-        # Pass through the flags needed by the underlying model builders
         model_kwargs = (
-            {
+            {}
+            if RadiologyReport
+            else {
                 "ImageEmbedding": ImageEmbedding,
                 "PhenotypeCls": PhenotypeCls,
                 "FiveYearPred": FiveYearPred,
             }
-            if not RadiologyReport
-            else {}
         )
         self.model = self._load_model(**model_kwargs)
 
     def _load_model(self, **kwargs) -> nn.Module:
-        """
-        Downloads the correct checkpoint and constructs the appropriate model.
-        """
+        """Downloads the correct checkpoint and constructs the appropriate model."""
         checkpoint_name = self._config["checkpoint"]
         model_builder = self._config["builder"]
 
-        # Download checkpoint to local directory
-        local_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "checkpoints"
-        )
+        local_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "checkpoints")
         self._download_checkpoint(filename=checkpoint_name, local_dir=local_dir)
 
-        # Build the model
         model = model_builder(**kwargs)
         checkpoint_path = os.path.join(local_dir, checkpoint_name)
 
@@ -111,5 +103,4 @@ class Merlin(nn.Module):
             raise AttributeError(
                 "The 'generate' method is only available when RadiologyReport=True."
             )
-        # Delegate the call to the actual text generation model
         return self.model.generate(*args, **kwargs)
