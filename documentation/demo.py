@@ -52,8 +52,8 @@ dataloader = DataLoader(
 # --- Default: contrastive embeddings + phenotype predictions ---
 
 model = Merlin()
-model.eval()
-model.cuda()
+_ = model.eval()
+_ =  model.cuda()
 
 for batch in dataloader:
     outputs = model(batch["image"].to(device), batch["text"])
@@ -66,8 +66,8 @@ for batch in dataloader:
 # --- Image embeddings ---
 
 model = Merlin(ImageEmbedding=True)
-model.eval()
-model.cuda()
+_ = model.eval()
+_ = model.cuda()
 
 for batch in dataloader:
     print("Passed Once")
@@ -78,14 +78,14 @@ for batch in dataloader:
 
 # --- Phenotype predictions ---
 model = Merlin(PhenotypeCls=True)
-model.eval()
-model.cuda()
+_ = model.eval()
+_ = model.cuda()
 
 phenotypes = pd.read_csv(os.path.join(os.getcwd(), "documentation", "phenotypes.csv"))
 
 for batch in dataloader:
     outputs = model(batch["image"].to(device)).squeeze(0).detach().cpu().numpy()
-
+    
     top_indices = np.argsort(outputs)[::-1][:3]
     top_probs = outputs[top_indices]
     top_phenos = phenotypes.iloc[top_indices].values  # first col = phenotype names
@@ -107,8 +107,8 @@ for batch in dataloader:
 # --- Five-year disease prediction ---
 
 model = Merlin(FiveYearPred=True)
-model.eval()
-model.cuda()
+_ = model.eval()
+_ = model.cuda()
 
 disease_names = [
     "Cardiovascular Disease (CVD)",
